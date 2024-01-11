@@ -1,0 +1,229 @@
+1. Run four HTTPD Docker containers with distinct, meaningful names, and apply restart policies 
+(NO, On-Failure, Always, and Unless-Stopped) to each of the four containers, respectively.
+Demonstrate that the restart policies function as expected.
+
+SOLUTION:-
+
+1] Run four HTTPD Docker containers with distinct, meaningful names, and apply restart policies 
+(NO, On-Failure, Always, and Unless-Stopped) to each of the four containers, respectively
+
+root@DESKTOP-VIDGD8F:DOCKER# docker container run -itd --name httpd_cont_1 --restart no httpd
+ea590bd52724005499b454a98a66e150ea5206a4baeb647caf3522f34a228da9
+root@DESKTOP-VIDGD8F:DOCKER#  docker container run -itd --name httpd_cont_2 --restart on-failure httpd
+781ae64418120a855c0bf24bba51498b11391633d3b9035ed5ebaedd9fc0b2ce
+root@DESKTOP-VIDGD8F:DOCKER# docker container run --name httpd_cont_3 --restart always httpd sleep 10
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls
+CONTAINER ID   IMAGE     COMMAND              CREATED          STATUS         PORTS     NAMES
+0698367cb037   httpd     "sleep 10"           18 seconds ago   Up 6 seconds   80/tcp    httpd_cont_3
+781ae6441812   httpd     "httpd-foreground"   4 minutes ago    Up 4 minutes   80/tcp    httpd_cont_2
+ea590bd52724   httpd     "httpd-foreground"   4 minutes ago    Up 4 minutes   80/tcp    httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER# docker container run --name httpd_cont_4 --restart unless-stopped httpd sleep 10
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls
+CONTAINER ID   IMAGE     COMMAND              CREATED              STATUS         PORTS     NAMES
+2e3e97a0e4b7   httpd     "sleep 10"           13 seconds ago       Up 1 second    80/tcp    httpd_cont_4
+0698367cb037   httpd     "sleep 10"           About a minute ago   Up 6 seconds   80/tcp    httpd_cont_3
+781ae6441812   httpd     "httpd-foreground"   5 minutes ago        Up 5 minutes   80/tcp    httpd_cont_2
+ea590bd52724   httpd     "httpd-foreground"   6 minutes ago        Up 6 minutes   80/tcp    httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER#
+
+2] Demonstrate that the restart policies function as expected.
+
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls
+CONTAINER ID   IMAGE     COMMAND              CREATED          STATUS          PORTS     NAMES
+2e3e97a0e4b7   httpd     "sleep 10"           5 minutes ago    Up 4 seconds    80/tcp    httpd_cont_4
+0698367cb037   httpd     "sleep 10"           6 minutes ago    Up 9 seconds    80/tcp    httpd_cont_3
+781ae6441812   httpd     "httpd-foreground"   10 minutes ago   Up 10 minutes   80/tcp    httpd_cont_2
+ea590bd52724   httpd     "httpd-foreground"   11 minutes ago   Up 11 minutes   80/tcp    httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER#
+root@DESKTOP-VIDGD8F:DOCKER# docker container stop httpd_cont_1
+httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER#  docker container ls -a
+CONTAINER ID   IMAGE     COMMAND              CREATED          STATUS                     PORTS     NAMES
+2e3e97a0e4b7   httpd     "sleep 10"           5 minutes ago    Up 9 seconds               80/tcp    httpd_cont_4
+0698367cb037   httpd     "sleep 10"           7 minutes ago    Up 3 seconds               80/tcp    httpd_cont_3
+781ae6441812   httpd     "httpd-foreground"   11 minutes ago   Up 11 minutes              80/tcp    httpd_cont_2
+ea590bd52724   httpd     "httpd-foreground"   11 minutes ago   Exited (0) 8 seconds ago             httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER#
+root@DESKTOP-VIDGD8F:DOCKER# docker container top httpd_cont_2
+UID                 PID                 PPID                C                   STIME               TTY                 TIME                CMD
+root                3518                3498                0                   12:23               pts/0               00:00:00            httpd -DFOREGROUND
+www-data            3541                3518                0                   12:23               pts/0               00:00:00            httpd -DFOREGROUND
+www-data            3542                3518                0                   12:23               pts/0               00:00:00            httpd -DFOREGROUND
+www-data            3543                3518                0                   12:23               pts/0               00:00:00            httpd -DFOREGROUND
+root@DESKTOP-VIDGD8F:DOCKER# kill -9 3541
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls -a
+CONTAINER ID   IMAGE     COMMAND              CREATED          STATUS                                  PORTS     NAMES
+2e3e97a0e4b7   httpd     "sleep 10"           6 minutes ago    Restarting (0) Less than a second ago             httpd_cont_4
+0698367cb037   httpd     "sleep 10"           8 minutes ago    Up 4 seconds                            80/tcp    httpd_cont_3
+781ae6441812   httpd     "httpd-foreground"   12 minutes ago   Up 12 minutes                           80/tcp    httpd_cont_2
+ea590bd52724   httpd     "httpd-foreground"   12 minutes ago   Exited (0) About a minute ago                     httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER#
+root@DESKTOP-VIDGD8F:DOCKER# docker inspect httpd_cont_3 | grep -i restartcount
+        "RestartCount": 110,
+root@DESKTOP-VIDGD8F:DOCKER#  docker container stop httpd_cont_3
+httpd_cont_3
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls -a
+CONTAINER ID   IMAGE     COMMAND              CREATED          STATUS                      PORTS     NAMES
+2e3e97a0e4b7   httpd     "sleep 10"           19 minutes ago   Up Less than a second       80/tcp    httpd_cont_4
+0698367cb037   httpd     "sleep 10"           20 minutes ago   Exited (0) 5 seconds ago              httpd_cont_3
+781ae6441812   httpd     "httpd-foreground"   24 minutes ago   Up 24 minutes               80/tcp    httpd_cont_2
+ea590bd52724   httpd     "httpd-foreground"   25 minutes ago   Exited (0) 13 minutes ago             httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER# docker inspect httpd_cont_3 | grep -i restartcount
+        "RestartCount": 111,
+root@DESKTOP-VIDGD8F:DOCKER# docker inspect httpd_cont_4 | grep -i restartcount
+        "RestartCount": 109,
+root@DESKTOP-VIDGD8F:DOCKER# docker container stop httpd_cont_4
+httpd_cont_4
+root@DESKTOP-VIDGD8F:DOCKER# systemctl restart docker
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls -a
+CONTAINER ID   IMAGE     COMMAND              CREATED          STATUS                      PORTS     NAMES
+2e3e97a0e4b7   httpd     "sleep 10"           20 minutes ago   Exited (0) 12 seconds ago             httpd_cont_4
+0698367cb037   httpd     "sleep 10"           21 minutes ago   Up 6 seconds                80/tcp    httpd_cont_3
+781ae6441812   httpd     "httpd-foreground"   26 minutes ago   Exited (0) 8 seconds ago              httpd_cont_2
+ea590bd52724   httpd     "httpd-foreground"   26 minutes ago   Exited (0) 14 minutes ago             httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER#
+
+
+
+==========================================================================================================
+2. Change the restart policy of a above running container from the default to a custom policy using the docker update command. 
+e.g. docker update --help
+
+SOLUTION:-
+
+root@DESKTOP-VIDGD8F:DOCKER# docker update --help
+
+Usage:  docker update [OPTIONS] CONTAINER [CONTAINER...]
+
+Update configuration of one or more containers
+
+Aliases:
+  docker container update, docker update
+
+Options:
+      --blkio-weight uint16        Block IO (relative weight), between 10 and 1000, or 0 to disable (default 0)
+      --cpu-period int             Limit CPU CFS (Completely Fair Scheduler) period
+      --cpu-quota int              Limit CPU CFS (Completely Fair Scheduler) quota
+      --cpu-rt-period int          Limit the CPU real-time period in microseconds
+      --cpu-rt-runtime int         Limit the CPU real-time runtime in microseconds
+  -c, --cpu-shares int             CPU shares (relative weight)
+      --cpus decimal               Number of CPUs
+      --cpuset-cpus string         CPUs in which to allow execution (0-3, 0,1)
+      --cpuset-mems string         MEMs in which to allow execution (0-3, 0,1)
+  -m, --memory bytes               Memory limit
+      --memory-reservation bytes   Memory soft limit
+      --memory-swap bytes          Swap limit equal to memory plus swap: -1 to enable unlimited swap
+      --pids-limit int             Tune container pids limit (set -1 for unlimited)
+      --restart string             Restart policy to apply when a container exits
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls -a
+CONTAINER ID   IMAGE     COMMAND              CREATED          STATUS                      PORTS     NAMES
+2e3e97a0e4b7   httpd     "sleep 10"           36 minutes ago   Exited (0) 15 minutes ago             httpd_cont_4
+0698367cb037   httpd     "sleep 10"           37 minutes ago   Up 1 second                 80/tcp    httpd_cont_3
+781ae6441812   httpd     "httpd-foreground"   41 minutes ago   Exited (0) 15 minutes ago             httpd_cont_2
+ea590bd52724   httpd     "httpd-foreground"   41 minutes ago   Exited (0) 30 minutes ago             httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER# docker update --restart=on-failure:5 781ae6441812 httpd_cont_1
+781ae6441812
+httpd_cont_1
+root@DESKTOP-VIDGD8F:DOCKER# docker update --restart=no 781ae6441812 httpd_cont_2
+781ae6441812
+httpd_cont_2
+root@DESKTOP-VIDGD8F:DOCKER# docker update --restart=always 2e3e97a0e4b7 httpd_cont_4
+2e3e97a0e4b7
+httpd_cont_4
+root@DESKTOP-VIDGD8F:DOCKER# docker update --restart=unless-stopped 0698367cb037 httpd_cont_3
+0698367cb037
+httpd_cont_3
+root@DESKTOP-VIDGD8F:DOCKER#
+
+==========================================================================================================
+3. Launch an NGINX container with a meaningful name and expose it on the host's port 80. 
+   Create an "index.html" file containing the text "Hello there, Let's be the Team CloudEthiX," 
+   and copy the file to the container's "/usr/share/nginx/html/" location. 
+   Access the container in a browser to verify that the webpage displays correctly.
+   
+SOLUTION:-
+
+root@DESKTOP-VIDGD8F:DOCKER# docker container run -itd -p 8080:80 --name nginx_cont nginx
+5739cb70b24cb6b085f25fe7117bc99d9c22a045aab65d596670df4ef971eed3
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                                   NAMES
+5739cb70b24c   nginx     "/docker-entrypoint.…"   17 seconds ago   Up 16 seconds   0.0.0.0:8080->80/tcp, :::8080->80/tcp   nginx_cont
+0698367cb037   httpd     "sleep 10"               2 hours ago      Up 6 seconds    80/tcp                                  httpd_cont_3
+root@DESKTOP-VIDGD8F:DOCKER# echo "Hello there, Let's be the Team CloudEthiX," > index.html
+root@DESKTOP-VIDGD8F:DOCKER# docker container cp index.html nginx_cont:/usr/share/nginx/html/
+Successfully copied 2.05kB to nginx_cont:/usr/share/nginx/html/
+root@DESKTOP-VIDGD8F:DOCKER# curl http://172.22.12.241:8080
+Hello there, Let's be the Team CloudEthiX,
+root@DESKTOP-VIDGD8F:DOCKER#
+
+==========================================================================================================
+4. Run a docker container with CPU and Memory limit.  docker container run --help 
+   ref links :- https://phoenixnap.com/kb/docker-memory-and-cpu-limit
+		        https://www.baeldung.com/ops/docker-memory-limit	
+				
+SOLUTION:-
+
+root@DESKTOP-VIDGD8F:DOCKER# docker container run -itd -m 500m --cpus=3 nginx
+6741a997773873b55d0ba929cf0350aa8f4b83b990e134e9da1cc4b12499a4da
+root@DESKTOP-VIDGD8F:DOCKER# docker container ls
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                                   NAMES
+6741a9977738   nginx     "/docker-entrypoint.…"   9 seconds ago   Up 8 seconds   80/tcp                                  crazy_engelbart
+5739cb70b24c   nginx     "/docker-entrypoint.…"   5 minutes ago   Up 5 minutes   0.0.0.0:8080->80/tcp, :::8080->80/tcp   nginx_cont
+0698367cb037   httpd     "sleep 10"               2 hours ago     Up 7 seconds   80/tcp                                  httpd_cont_3
+root@DESKTOP-VIDGD8F:DOCKER# docker container stats
+CONTAINER ID   NAME              CPU %     MEM USAGE / LIMIT     MEM %     NET I/O         BLOCK I/O   PIDS
+6741a9977738   crazy_engelbart   0.00%     7.195MiB / 500MiB     1.44%     866B / 0B       0B / 0B     9
+5739cb70b24c   nginx_cont        0.00%     7.133MiB / 7.684GiB   0.09%     3.6kB / 2.7kB   0B / 0B     9
+0698367cb037   httpd_cont_3      0.00%     376KiB / 7.684GiB     0.00%     266B / 0B       0B / 0B     1
+root@DESKTOP-VIDGD8F:DOCKER# docker container exec 6741a9977738 lscpu
+Architecture:                       x86_64
+CPU op-mode(s):                     32-bit, 64-bit
+Address sizes:                      39 bits physical, 48 bits virtual
+Byte Order:                         Little Endian
+CPU(s):                             8
+On-line CPU(s) list:                0-7
+Vendor ID:                          GenuineIntel
+Model name:                         Intel(R) Xeon(R) CPU E3-1535M v6 @ 3.10GHz
+CPU family:                         6
+Model:                              158
+Thread(s) per core:                 2
+Core(s) per socket:                 4
+
+==========================================================================================================
+5.  Update CUP and Memory of docker container using docker update.
+	ref links :- https://docs.docker.com/engine/reference/commandline/update/
+	
+SOLUTION:-
+
+root@DESKTOP-VIDGD8F:DOCKER# docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                                   NAMES
+6741a9977738   nginx     "/docker-entrypoint.…"   17 minutes ago   Up 17 minutes   80/tcp                                  crazy_engelbart
+5739cb70b24c   nginx     "/docker-entrypoint.…"   23 minutes ago   Up 23 minutes   0.0.0.0:8080->80/tcp, :::8080->80/tcp   nginx_cont
+0698367cb037   httpd     "sleep 10"               2 hours ago      Up 5 seconds    80/tcp                                  httpd_cont_3
+root@DESKTOP-VIDGD8F:DOCKER# docker update --cpus 1 --memory 200m 6741a9977738
+6741a9977738
+root@DESKTOP-VIDGD8F:DOCKER# docker container stats
+CONTAINER ID   NAME              CPU %     MEM USAGE / LIMIT     MEM %     NET I/O          BLOCK I/O   PIDS
+6741a9977738   crazy_engelbart   0.00%     7.449MiB / 200MiB     3.72%     1.01kB / 0B      0B / 0B     9
+5739cb70b24c   nginx_cont        0.00%     7.133MiB / 7.684GiB   0.09%     3.74kB / 2.7kB   0B / 0B     9
+0698367cb037   httpd_cont_3      0.00%     360KiB / 7.684GiB     0.00%     516B / 0B        0B / 0B     1
+CONTAINER ID   NAME              CPU %     MEM USAGE / LIMIT     MEM %     NET I/O          BLOCK I/O   PIDS
+6741a9977738   crazy_engelbart   0.00%     7.449MiB / 200MiB     3.72%     1.01kB / 0B      0B / 0B     9
+5739cb70b24c   nginx_cont        0.00%     7.133MiB / 7.684GiB   0.09%     3.74kB / 2.7kB   0B / 0B     9
+0698367cb037   httpd_cont_3      0.00%     360KiB / 7.684GiB     0.00%     516B / 0B        0B / 0B     1
+^C
+root@DESKTOP-VIDGD8F:DOCKER# docker container exec 6741a9977738 lscpu
+Architecture:                       x86_64
+CPU op-mode(s):                     32-bit, 64-bit
+Address sizes:                      39 bits physical, 48 bits virtual
+Byte Order:                         Little Endian
+CPU(s):                             8
+On-line CPU(s) list:                0-7
+Vendor ID:                          GenuineIntel
+Model name:                         Intel(R) Xeon(R) CPU E3-1535M v6 @ 3.10GHz
+CPU family:                         6
+Model:                              158
+Thread(s) per core:                 2
+Core(s) per socket:                 4
+Socket(s):                          1
+Stepping:                           9
